@@ -1,12 +1,13 @@
 {
   "name": "monemy",
-  "version": "2.1.2",
+  "version": "2.1.3",
   "private": true,
   "description": "Finanzas personales locales. PWA sin servidor.",
   "scripts": {
     "test": "node --test tests/core.test.cjs",
     "test:browser": "node tests/browser.cjs",
-    "test:upgrade": "node tests/upgrade.cjs"
+    "test:upgrade": "node tests/upgrade.cjs",
+    "test:preservation": "node tests/preservation.cjs"
   },
   "devDependencies": { "playwright": "1.62.1" }
 }

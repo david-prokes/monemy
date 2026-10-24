@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.1.2';
+const APP_VERSION='2.1.3';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -148,7 +148,7 @@ document.addEventListener('click',safe(async e=>{
  case 'cancel-goal':goalEditId=null;renderGoals();break;
  case 'save-goal':{const amt=number($('#goal-limit')?.value);if(!(amt>0)){showToast('Importe no válido');break}const kind=$('#goal-type button.selected')?.dataset.goalKind||'expense',catId=$('#goal-cat').value==='_none'?null:$('#goal-cat').value;let g=state.goals.find(x=>x.id===goalEditId);if(!g){g={id:uid()};state.goals.push(g)}Object.assign(g,{limit:amt,kind,catId});state.goals=state.goals.filter(x=>x.id===g.id||!(x.kind===kind&&x.catId===catId));goalEditId=null;await save();renderAll();showToast('Objetivo guardado');break}
  case 'cancel-rule-edit':ruleEditId=null;renderRules();break;
- case 'save-rule-edit':{const r=state.rules.find(x=>x.id===ruleEditId),amt=number($('#rule-amount').value),d=$('#rule-next').value;if(!r||!(amt>0)||!MD.validDate(d)){showToast('Revisa importe y fecha');break}r.amount=amt;r.note=$('#rule-note').value.trim();r.catId=$('#rule-cat').value==='_none'?null:$('#rule-cat').value;r.freq=$('#rule-freq').value;r.nextDate=d;const dt=dateObj(d);r.weekday=dt.getDay();r.monthDay=dt.getDate();r.annualDay=dt.getDate();r.annualMonth=dt.getMonth()+1;ruleEditId=null;reconcileRules();await save();renderAll();showToast('Pago actualizado');break}
+ case 'save-rule-edit':{const r=state.rules.find(x=>x.id===ruleEditId),amt=number($('#rule-amount').value),d=$('#rule-next').value;if(!r||!(amt>0)||!MD.validDate(d)){showToast('Revisa importe y fecha');break}r.amount=amt;r.note=$('#rule-note').value.trim();r.catId=$('#rule-cat').value==='_none'?null:$('#rule-cat').value;const freq=$('#rule-freq').value;if(r.freq!==freq||r.nextDate!==d){const dt=dateObj(d);r.weekday=dt.getDay();r.monthDay=dt.getDate();r.annualDay=dt.getDate();r.annualMonth=dt.getMonth()+1}r.freq=freq;r.nextDate=d;ruleEditId=null;reconcileRules();await save();renderAll();showToast('Pago actualizado');break}
  case 'toggle-search':searchOpen=!searchOpen;$('#mov-search-wrap').classList.toggle('hidden',!searchOpen);if(searchOpen)$('#mov-query').focus();else{$('#mov-query').value='';renderMovements()}break;
  case 'cancel-tx-edit':movEditId=null;renderMovements();break;
  case 'save-tx-edit':{const t=state.transactions.find(x=>x.id===movEditId),amt=number($('#tx-edit-amount').value),d=$('#tx-edit-date').value;if(!t||!(amt>0)||!MD.validDate(d)){showToast('Revisa el movimiento');break}Object.assign(t,{amount:amt,date:d,note:$('#tx-edit-note').value.trim(),catId:$('#tx-edit-category').value==='_none'?null:$('#tx-edit-category').value});movEditId=null;await save();renderAll();showToast('Movimiento actualizado');break}

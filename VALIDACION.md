@@ -1,4 +1,4 @@
-# Validación de monemy 2.1.2
+# Validación de monemy 2.1.3
 
 24 de octubre de 2026.
 
@@ -30,3 +30,13 @@ Los perfiles móviles y WebKit/Chromium no son teléfonos físicos ni equivalen 
 Para comprobarlo en el mismo móvil: conservar instalada la app, actualizar mediante Actualizar, comparar los movimientos y presupuestos ya existentes, cerrar y reabrir desde su icono y repetir en modo avión. No borrar datos del sitio ni desinstalar para actualizar. El nombre que el sistema conserve para un acceso directo existente puede gestionarse de forma independiente del nombre de la aplicación en el manifiesto.
 
 Se conservan la base IndexedDB, su versión, el origen y la identidad del manifiesto. Los datos permanecen locales, sin sincronización entre dispositivos.
+
+## Revisión de conservación de cambios
+
+Se contrastó el código de la rama main con la copia de trabajo: sin diferencias previas a esta revisión. Se descargaron por HTTPS los diez recursos de la aplicación publicada y coincidían byte por byte con el código y los iconos revisados.
+
+La nueva prueba `tests/preservation.cjs` pasa en Chromium con perfil Pixel 7 y WebKit con perfil iPhone 13. Comprueba las tres pestañas y un único registro; selección inicial Sin definir y extras ocultos; distribución de controles, período dentro del neto y navegación de períodos; creación, modificación y eliminación de categorías; paleta de ocho colores; objetivos por categoría y de ingreso; edición de presupuestos por gesto y eliminación con deshacer; alertas amarillas y rojas, lectura y ausencia de duplicados tras recargar; ambos gráficos amplios con eje fijo; año junto a Proyección y ausencia de títulos retirados; calendario y detalle semanal; exportación, importación y persistencia exacta de las cinco colecciones financieras.
+
+Se reprodujo un fallo anterior: editar solo el importe de una regla mensual del día 31 cuya próxima fecha cae el 28 de febrero cambiaba indebidamente el día a 28. Ocurría también en una regla anual del 29 de febrero. La corrección conserva el calendario si no se cambia la próxima fecha ni la frecuencia; el histórico no se modifica. La prueba falla con el código anterior y pasa después de la corrección en ambos motores. También se comprueba que cambiar expresamente la fecha actualiza la programación.
+
+Tras la corrección vuelven a pasar las 12 pruebas de cálculo, la regresión completa del navegador y la actualización desde la versión anterior en ambos motores. Siguen vigentes las limitaciones de dispositivos físicos indicadas arriba.

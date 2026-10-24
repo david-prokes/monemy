@@ -1,5 +1,5 @@
 'use strict';
-const RELEASE='2.1.2',PREFIX='mi-dinero:'+self.registration.scope+':',CACHE=PREFIX+'v'+RELEASE;
+const RELEASE='2.1.3',PREFIX='mi-dinero:'+self.registration.scope+':',CACHE=PREFIX+'v'+RELEASE;
 const RESOURCES=['./','./index.html','./styles.css','./core.js','./features.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>event.waitUntil((async()=>{
  // Fetch a distinct CDN URL for every release, but keep the canonical offline keys.
