@@ -1,0 +1,5 @@
+node_modules/
+qa/
+playwright-report/
+test-results/
+.DS_Store
