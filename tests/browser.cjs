@@ -50,8 +50,8 @@ let browser,activePage;
  await click('toggle-rules');await page.locator('#rule-list [data-toggle-rule]').click();await page.waitForFunction(()=>state.rules[0].paused);await page.locator('#rule-list [data-toggle-rule]').click();await page.waitForFunction(()=>!state.rules[0].paused);
  await page.locator('#rule-list [data-toggle-row]').click();await page.locator('[data-edit-rule]').click();await page.locator('#rule-amount').fill('15,99');await click('save-rule-edit');await page.waitForFunction(()=>state.rules[0].amount===1599);assert.equal((await data()).transactions.find(t=>t.ruleId).amount,1399);
  console.log('PASS periodic creation, no duplicates on reload, pause/resume, edit preserving history');
- await page.locator('[data-nav="proyeccion"]').click();assert.equal(await page.locator('#forecast-chart svg').count(),1);assert.equal(await page.locator('#forecast-chart [data-chart-index]').count(),12);
- assert.equal(await page.locator('#screen-proyeccion').innerText().then(t=>/EMA|exponencial/i.test(t)),false);
+ await page.locator('[data-nav="proyeccion"]').click();assert.equal(await page.locator('#forecast-chart .savings-chart').count(),1);assert.equal(await page.locator('#forecast-chart [data-chart-index]').count(),12);
+ assert.equal(await page.locator('#screen-proyeccion').innerText().then(t=>/\bEMA\b|exponencial/i.test(t)),false);
  await page.locator('[data-chart-index="11"]').click();assert.match(await page.locator('#chart-tip').innerText(),/diciembre/);await page.screenshot({path:path.join(shots,'proyeccion.png'),fullPage:true});
  // No document-wide horizontal overflow at common phone and desktop widths.
  for(const width of [320,375,390,430,768,1280]){

@@ -1,6 +1,6 @@
 {
-  "name": "Mi dinero",
-  "short_name": "Mi dinero",
+  "name": "monemy",
+  "short_name": "monemy",
   "description": "Gastos e ingresos sin complicaciones",
   "start_url": "./index.html",
   "scope": "./",

@@ -1,6 +1,6 @@
 'use strict';
-const PREFIX='mi-dinero:'+self.registration.scope+':',CACHE=PREFIX+'v2.0.0';
-const RESOURCES=['./','./index.html','./styles.css','./core.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const PREFIX='mi-dinero:'+self.registration.scope+':',CACHE=PREFIX+'v2.1.0';
+const RESOURCES=['./','./index.html','./styles.css','./core.js','./features.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(RESOURCES))));
 self.addEventListener('message',event=>{if(event.data?.type==='SKIP_WAITING')self.skipWaiting()});
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

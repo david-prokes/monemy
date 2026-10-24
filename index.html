@@ -2,9 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f7f9f8"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Mi dinero">
+<meta name="theme-color" content="#f7f9f8"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="monemy">
 <meta name="description" content="Tus gastos, ingresos y ahorro sin complicaciones.">
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><title>Mi dinero</title>
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="./apple-touch-icon.png"><title>monemy</title>
 <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -12,6 +12,7 @@
 <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10H3z"/><path d="M9 20v-7h6v7"/></symbol>
 <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="3"/></symbol>
 <symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20h18M6 17v-5M12 17V7M18 17V3"/></symbol>
+<symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 14h5l2 3h2l2-3h5"/></symbol>
 <symbol id="i-settings" viewBox="0 0 24 24"><path d="M12 3.5 14 4l1 2 2 .5 2-.5 2 3-1.5 1.5v3L21 15l-2 3-2-.5-2 .5-1 2h-4l-1-2-2-.5-2 .5-2-3 1.5-1.5v-3L3 9l2-3 2 .5L9 6l1-2z"/><circle cx="12" cy="12" r="3"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/></symbol>
 <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m16 16 5 5"/></symbol>
@@ -43,7 +44,8 @@
 <div class="app" id="app">
 <main><div id="storage-error" class="panel hidden" role="alert"></div>
 <section class="screen active" id="screen-resumen" aria-label="Resumen">
- <header class="topbar"><h1>Resumen</h1><div class="toolbar"><button class="icon-btn" data-action="toggle-rules" title="Pagos periódicos" aria-label="Pagos periódicos"><svg><use href="#i-clock"/></svg></button><button class="icon-btn" data-action="toggle-settings" title="Ajustes" aria-label="Ajustes"><svg><use href="#i-settings"/></svg></button></div></header>
+ <header class="topbar"><h1>Resumen</h1><div class="toolbar"><button class="icon-btn inbox-button" id="inbox-toggle" data-action="toggle-alerts" aria-label="Alertas" aria-expanded="false" aria-controls="alerts-panel"><svg><use href="#i-inbox"/></svg><span id="alert-badge" class="alert-badge hidden"></span></button><button class="icon-btn" data-action="toggle-rules" title="Pagos periódicos" aria-label="Pagos periódicos"><svg><use href="#i-clock"/></svg></button><button class="icon-btn" data-action="toggle-settings" title="Ajustes" aria-label="Ajustes"><svg><use href="#i-settings"/></svg></button></div></header>
+ <div id="alerts-panel" class="panel hidden"><div class="panel-heading"><h2 class="panel-title">Alertas</h2><button class="icon-btn" data-action="toggle-alerts" aria-label="Cerrar alertas"><svg><use href="#i-chevron-down"/></svg></button></div><div class="inbox-actions"><button class="muted-link" id="read-all-alerts" data-action="read-all-alerts">Marcar todas como leídas</button></div><div id="alert-list" class="alert-list"></div></div>
  <div id="settings-panel" class="panel hidden"><div class="panel-heading"><b>Ajustes</b><button class="icon-btn" data-action="toggle-settings"><svg><use href="#i-chevron-down"/></svg></button></div><div class="settings-actions"><button class="soft-btn" data-action="load-demo">Cargar datos de ejemplo</button><button class="soft-btn" data-action="export-data">Exportar datos</button><button class="soft-btn" data-action="import-data">Importar datos</button><button class="soft-btn danger-soft" data-action="clear-data">Borrar todos los datos</button></div><input id="import-file" type="file" accept="application/json,.json" class="hidden"></div>
  <div id="rules-panel" class="panel hidden"><div class="panel-heading"><b>Pagos periódicos</b><button class="icon-btn" data-action="toggle-rules"><svg><use href="#i-chevron-down"/></svg></button></div><div id="rule-list" class="rule-list"></div><div id="rule-editor"></div></div>
  <div class="panel" id="register-card">
@@ -73,11 +75,13 @@
  <header class="topbar"><h1>Proyección</h1></header>
  <div class="forecast-switch"><span class="small subtle">Evolución y ahorro</span><select id="forecast-year" aria-label="Año"></select></div>
  <div class="panel projection-hero"><div class="hero-label" style="color:#598579" id="forecast-value-label">Ahorro estimado a final de año</div><div class="big-value" id="forecast-value">0,00 €</div></div>
- <div class="panel chart-panel"><div class="panel-heading" style="padding:0 7px;margin:0 0 12px"><h2 class="panel-title">Evolución mensual</h2><span class="tiny subtle">Real — Estimado · · ·</span></div><div id="forecast-empty" class="empty hidden">Registra tus primeros movimientos para ver tu proyección.</div><div id="forecast-chart"></div><div class="legend"><span class="legend-item"><i class="legend-dot" style="background:#0c7764"></i>Ingresos</span><span class="legend-item"><i class="legend-dot" style="background:#eb7d6b"></i>Gastos</span><span class="legend-item"><i class="legend-dot" style="background:#b59de6"></i>Ahorro</span><span class="legend-item"><i class="legend-dot" style="background:#66bea5"></i>Acumulado</span></div><div id="forecast-limited" class="tiny subtle hidden" style="margin:12px 6px">Estimación inicial · poco historial</div><div id="chart-tip" class="chart-tip hidden"></div></div>
+ <div class="panel chart-panel"><div class="panel-heading" style="padding:0 7px;margin:0 0 12px"><h2 class="panel-title" id="forecast-chart-title">Ahorro mensual</h2><span class="tiny subtle">Real — Estimado · · ·</span></div><div class="segmented forecast-modes"><button class="selected" data-forecast-mode="savings">Ahorro</button><button data-forecast-mode="all">Todo</button></div><div id="forecast-empty" class="empty hidden">Registra tus primeros movimientos para ver tu proyección.</div><div id="forecast-chart"></div><div class="small subtle chart-scroll-hint" id="chart-scroll-hint">Desliza para ver todos los meses</div><div class="legend" id="forecast-series-legend"><span class="legend-item"><i class="legend-dot" style="background:#0c7764"></i>Ingresos</span><span class="legend-item"><i class="legend-dot" style="background:#eb7d6b"></i>Gastos</span><span class="legend-item"><i class="legend-dot" style="background:#b59de6"></i>Ahorro</span><span class="legend-item"><i class="legend-dot" style="background:#66bea5"></i>Acumulado</span></div><div id="forecast-limited" class="tiny subtle hidden" style="margin:12px 6px">Estimación inicial · poco historial</div><div id="chart-tip" class="chart-tip hidden"></div></div>
+ <div class="panel activity-panel"><div class="panel-heading"><h2 class="panel-title">Tu mes, día a día</h2><span class="small subtle" id="activity-month"></span></div><div class="calendar-weekdays" aria-hidden="true"><span>L</span><span>M</span><span>X</span><span>J</span><span>V</span><span>S</span><span>D</span></div><div class="heatmap" id="month-heatmap" aria-label="Actividad del mes actual"></div><div class="heat-legend"><span><i class="heat-key expense"></i>Más gastos</span><span><i class="heat-key income"></i>Más ingresos</span></div><div class="activity-detail hidden" id="activity-detail" aria-live="polite"></div></div>
+ <div class="panel activity-panel"><h2 class="panel-title">Tu semana habitual</h2><p class="small subtle weekday-caption">Promedio por día · últimos 3 meses</p><div class="heatmap weekday-heatmap" id="weekday-heatmap" aria-label="Promedio de lunes a domingo"></div><div class="activity-detail hidden" id="weekday-detail" aria-live="polite"></div></div>
 </section>
 </main>
 <nav class="bottom-nav" aria-label="Navegación"><button class="nav-item active" data-nav="resumen"><svg><use href="#i-home"/></svg>Resumen</button><button class="nav-item" data-nav="movimientos"><svg><use href="#i-list"/></svg>Movimientos</button><button class="nav-item" data-nav="proyeccion"><svg><use href="#i-chart"/></svg>Proyección</button></nav>
 </div>
 <div class="toast" id="toast" role="status"><span id="toast-text"></span><button id="toast-action" class="hidden">Deshacer</button></div>
-<script src="./core.js" defer></script><script src="./app.js" defer></script>
+<script src="./core.js" defer></script><script src="./features.js" defer></script><script src="./app.js" defer></script>
 </body></html>

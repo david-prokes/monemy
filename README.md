@@ -1,4 +1,4 @@
-# Mi dinero
+# monemy
 
 Aplicación gratuita de finanzas personales con tres pestañas: **Resumen**, **Movimientos** y **Proyección**. Conserva la estructura del prototipo suministrado.
 
@@ -49,5 +49,33 @@ npm run test:browser
 También puede indicarse `CHROMIUM_PATH` para usar un Chromium ya instalado. Las capturas de prueba se guardan en una carpeta temporal, o en `SCREENSHOT_DIR` si se especifica. Las pruebas del navegador arrancan su propio servidor en un puerto libre y comprueban el funcionamiento en `/mi-dinero/`.
 
 Al publicar una nueva versión, cambiar el sufijo de `CACHE` en `sw.js`. La app ofrece «Actualizar» cuando la versión está lista. El service worker solo limpia sus propias cachés y nunca elimina IndexedDB.
+
+## Novedades 2.1
+
+- Buzón dentro de Resumen, al lado del reloj y los ajustes, con contador de avisos sin leer y tarjetas amarillas o rojas. Los avisos se conservan localmente y pueden marcarse como leídos.
+- Presupuesto de gasto global o por categoría: aviso al alcanzar el límite, aviso rojo al superarlo y aviso de gasto rápido al cruzar el 25%, 50% o 75% en menos de la mitad del tiempo proporcional del mes. Para el primer umbral se incluyen los tres primeros días. Se muestra un único aviso de ritmo por presupuesto; solo vuelve a marcarse sin leer si aumenta el umbral o la criticidad.
+- Comparación con el gasto total medio de los tres meses naturales anteriores, cuando los tres tienen gastos registrados: amarillo al superarlo y rojo desde el 125%. Los objetivos de ingreso no generan avisos negativos por alcanzarse.
+- Personalización de categorías mediante una paleta de ocho colores. Los colores antiguos se mantienen al actualizar; al editar una categoría se ofrece la paleta nueva.
+- Proyección abre en Ahorro: cada mes tiene su importe visible, un eje ajustado a los valores y desplazamiento lateral con el eje fijo. Abre alrededor del mes actual. Todo conserva las cuatro series del gráfico original.
+- Calendario del mes actual y promedios de lunes a domingo. El color representa ingresos menos gastos: verde positivo, rojo negativo; la intensidad representa su magnitud. Tocar una celda muestra ingresos, gastos y neto. Los días futuros no se cuentan. Los promedios incluyen los días sin movimientos dentro de los últimos tres meses, sin contar fechas anteriores al primer registro.
+
+## Actualizar conservando los datos
+
+Se conservan el origen, `manifest.id`, `start_url`, la base IndexedDB `mi-dinero-local` y la clave `state/main`. El nombre visible cambia a monemy; la identidad interna se mantiene por compatibilidad.
+
+La versión 2.1 añade metadatos al formato 2 de los datos, sin convertir otra vez los céntimos ni borrar colecciones. Antes de migrar guarda una copia del estado anterior en `state/backup:before-2.1.0`, en una transacción local. El service worker prepara primero todos los archivos y solo aplica la versión completa al aceptar Actualizar. Una descarga incompleta deja funcionando la versión anterior. Su limpieza afecta exclusivamente a las cachés de archivos de su propio ámbito.
+
+La app solicita almacenamiento persistente cuando el navegador lo permite; este puede concederlo o denegarlo. Las actualizaciones de código conservan los datos en el mismo navegador/perfil y origen. Borrar los datos del sitio, desinstalar o cambiar de origen/perfil puede eliminarlos o separarlos; las copias internas no sustituyen una exportación externa para esos casos.
+
+Prueba reproducible de actualización, sobre un mismo perfil y origen:
+
+```sh
+# Desde un clon del repositorio:
+git worktree add /tmp/monemy-previous 8d3b6f9457d5a8dbc36538cc1b7895531a242384
+npx playwright install chromium webkit
+BASELINE_DIR=/tmp/monemy-previous npm run test:upgrade
+```
+
+Pueden indicarse `CHROMIUM_PATH` y `WEBKIT_PATH` para usar ejecutables existentes.
 
 Consultar `VALIDACION.md` para las comprobaciones realizadas y sus límites.

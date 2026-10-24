@@ -44,12 +44,14 @@ function reconcile(state,today){
 }
 function migrate(data){
  const d=JSON.parse(JSON.stringify(data));
- if(d.schema!==2){
+ if(d.schema!==undefined&&d.schema!==1&&d.schema!==2)throw Error('Estos datos pertenecen a una versión más reciente. Actualiza monemy.');
+ if(d.schema===undefined||d.schema===1){
   for(const key of ['transactions','rules'])for(const x of d[key]||[])x.amount=Math.round(x.amount*100);
   for(const x of d.goals||[])x.limit=Math.round(x.limit*100);
  }
  d.schema=2;d.revision=Number.isSafeInteger(d.revision)?d.revision:0;
  d.occurrences=[...new Set([...(d.occurrences||[]),...(d.transactions||[]).filter(t=>t.ruleId).map(t=>`rec:${t.ruleId}:${t.date}`)])];
+ d.alertHistory=(Array.isArray(d.alertHistory)?d.alertHistory:[]).filter(a=>a&&typeof a.id==='string'&&/^[a-zA-Z0-9:_-]{1,200}$/.test(a.id)&&['warning','critical'].includes(a.severity)&&validDate(a.date)&&typeof a.title==='string'&&a.title.length<=200&&typeof a.detail==='string'&&a.detail.length<=300).map(a=>({id:a.id,severity:a.severity,date:a.date,title:a.title,detail:a.detail,milestone:Number(a.milestone)||0,read:a.read===true}));
  return d;
 }
 function validate(data){
@@ -105,6 +107,68 @@ function forecast(state,y,today){
   out.net=out.inc-out.exp;out.acc=acc+=out.net;return out;
  });
 }
-const api={MAX,fmt,date,days,add,validDate,parseCents,input,total,first,next,reconcile,migrate,validate,monthlyBaseline,forecast};
+const PALETTE=[{color:'#e47554',name:'Coral'},{color:'#4f98db',name:'Azul'},{color:'#906dce',name:'Violeta'},{color:'#c99432',name:'Ocre'},{color:'#cb7b9b',name:'Rosa'},{color:'#158d70',name:'Verde'},{color:'#589aaf',name:'Turquesa'},{color:'#838f96',name:'Gris'}];
+const money=n=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:2}).format(n/100);
+function alertCandidates(state,today){
+ const month=today.slice(0,7),day=date(today).getDate(),length=days(date(today).getFullYear(),date(today).getMonth()+1);
+ const expenses=state.transactions.filter(t=>t.kind==='expense'&&t.date.startsWith(month)&&t.date<=today).sort((a,b)=>a.date.localeCompare(b.date));
+ const out=[];
+ for(const goal of state.goals.filter(g=>g.kind==='expense')){
+  const rows=expenses.filter(t=>goal.catId===null||t.catId===goal.catId),spent=total(rows,'expense');
+  const label=goal.catId?(state.categories.find(c=>c.id===goal.catId)?.name||'Sin definir'):'total mensual';
+  const id=`${month}:${goal.id}`;
+  if(spent>=goal.limit){
+   out.push({id:id+':limit',date:today,severity:spent>goal.limit?'critical':'warning',title:spent>goal.limit?`Presupuesto superado · ${label}`:`Presupuesto alcanzado · ${label}`,detail:`${money(spent)} de ${money(goal.limit)}.`,milestone:100});continue;
+  }
+  let pace=null;
+  for(const threshold of [25,50,75]){
+   let accumulated=0,crossed=null;
+   for(const row of rows){accumulated+=row.amount;if(accumulated*100>=goal.limit*threshold){crossed=row.date;break}}
+   if(crossed){const elapsed=date(crossed).getDate();if(elapsed<=Math.max(3,Math.floor(length*threshold/200)))pace={id:id+':pace',date:crossed,severity:threshold>=75?'critical':'warning',title:`Gasto rápido · ${label}`,detail:`Has alcanzado el ${threshold}% del presupuesto en solo ${elapsed} ${elapsed===1?'día':'días'}.`,milestone:threshold}}
+  }
+  if(pace)out.push(pace);
+ }
+ const now=date(month+'-01'),previous=Array.from({length:3},(_,i)=>fmt(new Date(now.getFullYear(),now.getMonth()-i-1,1,12)).slice(0,7));
+ const sums=previous.map(m=>total(state.transactions.filter(t=>t.date.startsWith(m)),'expense'));
+ if(previous.every(m=>state.transactions.some(t=>t.kind==='expense'&&t.date.startsWith(m)))){
+  const avg=Math.round(sums.reduce((a,b)=>a+b,0)/3),spent=total(expenses,'expense');
+  if(avg>0&&spent>avg)out.push({id:`${month}:average`,date:today,severity:spent>=avg*1.25?'critical':'warning',title:'Gasto por encima de tu media',detail:`Llevas ${money(spent)}. La media mensual de los últimos 3 meses es ${money(avg)}.`,milestone:0});
+ }
+ return out;
+}
+function collectAlerts(state,today){
+ const before=JSON.stringify(state.alertHistory||[]),history=state.alertHistory||(state.alertHistory=[]);
+ for(const candidate of alertCandidates(state,today)){
+  const existing=history.find(a=>a.id===candidate.id);
+  if(!existing)history.push({...candidate,read:false});
+  else if((candidate.severity==='critical'&&existing.severity!=='critical')||candidate.milestone>existing.milestone)Object.assign(existing,candidate,{read:false});
+ }
+ history.sort((a,b)=>b.date.localeCompare(a.date)||a.id.localeCompare(b.id));state.alertHistory=history.slice(0,200);
+ return before!==JSON.stringify(state.alertHistory);
+}
+function activity(state,today){
+ const now=date(today),y=now.getFullYear(),m=now.getMonth(),month=today.slice(0,7),length=days(y,m+1);
+ const daily=Array.from({length},(_,i)=>({date:`${month}-${String(i+1).padStart(2,'0')}`,income:0,expense:0,net:0,future:i+1>now.getDate()}));
+ const anchor=new Date(y,m-3,1,12),windowStart=add(fmt(new Date(anchor.getFullYear(),anchor.getMonth(),Math.min(now.getDate(),days(anchor.getFullYear(),anchor.getMonth()+1)),12)),1);
+ const known=state.transactions.filter(t=>t.date<=today),firstDate=known.map(t=>t.date).sort()[0],start=firstDate&&firstDate>windowStart?firstDate:windowStart;
+ const byDate=new Map();
+ for(const tx of known){
+  if(!byDate.has(tx.date))byDate.set(tx.date,{income:0,expense:0});byDate.get(tx.date)[tx.kind]+=tx.amount;
+  if(tx.date.startsWith(month)){const cell=daily[date(tx.date).getDate()-1];cell[tx.kind]+=tx.amount;cell.net=cell.income-cell.expense}
+ }
+ const weekdays=Array.from({length:7},(_,i)=>({weekday:i,income:0,expense:0,net:0,count:0}));
+ if(firstDate)for(let cursor=start;cursor<=today;cursor=add(cursor,1)){
+  const d=weekdays[(date(cursor).getDay()+6)%7],values=byDate.get(cursor)||{income:0,expense:0};d.income+=values.income;d.expense+=values.expense;d.count++;
+ }
+ for(const d of weekdays){d.income=d.count?Math.round(d.income/d.count):0;d.expense=d.count?Math.round(d.expense/d.count):0;d.net=d.income-d.expense}
+ return {month,offset:(date(month+'-01').getDay()+6)%7,daily,weekdays,start,hasHistory:!!firstDate};
+}
+function chartDomain(values){
+ const min=Math.min(0,...values),max=Math.max(0,...values),span=max-min||100,raw=span/4,power=10**Math.floor(Math.log10(raw)),fraction=raw/power;
+ const step=(fraction<=1?1:fraction<=2?2:fraction<=2.5?2.5:fraction<=5?5:10)*power;
+ const lo=min<0?Math.floor((min-span*.12)/step)*step:0,hi=max>0?Math.ceil((max+span*.18)/step)*step:0;
+ return {min:lo,max:hi===lo?lo+step*4:hi,step};
+}
+const api={MAX,PALETTE,fmt,date,days,add,validDate,parseCents,input,total,first,next,reconcile,migrate,validate,monthlyBaseline,forecast,alertCandidates,collectAlerts,activity,chartDomain};
 root.MD=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window==='undefined'?globalThis:window);
