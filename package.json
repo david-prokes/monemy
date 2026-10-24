@@ -1,6 +1,6 @@
 {
   "name": "monemy",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "private": true,
   "description": "Finanzas personales locales. PWA sin servidor.",
   "scripts": {

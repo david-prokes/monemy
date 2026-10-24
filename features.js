@@ -29,12 +29,16 @@ function savingsChart(data){
   svg+=`<rect tabindex="0" role="button" aria-label="${MONTHS[i]}: ${esc(euro(d.net))}${d.estimated?', previsto':''}" data-chart-index="${i}" x="${L+i*w/12}" y="0" width="${w/12}" height="${H}" fill="transparent"/>`;
  });return `<div class="savings-axis" aria-hidden="true"><svg viewBox="0 0 ${L} ${H}" preserveAspectRatio="none">${axis}</svg></div><div class="savings-scroll">${svg}</svg></div>`;
 }
+function evolutionChart(data){
+ const markup=svgChart(data),axis=[...markup.matchAll(/<text class="axis-tick"[^>]*>.*?<\/text>/g)].map(match=>match[0]).join('');
+ return `<div class="all-axis" aria-hidden="true"><svg viewBox="0 0 47 313" preserveAspectRatio="none">${axis}</svg></div><div class="all-scroll">${markup}</div>`;
+}
 function renderProjectionChart(data){
  $('#forecast-chart-title').textContent=forecastMode==='savings'?'Ahorro mensual':'Evolución mensual';
  $$('[data-forecast-mode]').forEach(b=>b.classList.toggle('selected',b.dataset.forecastMode===forecastMode));
- $('#forecast-series-legend').classList.toggle('hidden',forecastMode==='savings');$('#chart-scroll-hint').classList.toggle('hidden',forecastMode!=='savings');
- $('#forecast-chart').classList.toggle('scroll-chart',forecastMode==='savings');$('#forecast-chart').innerHTML=forecastMode==='savings'?savingsChart(data):svgChart(data);
- if(forecastMode==='savings'){const now=new Date(),focus=forecastYear===now.getFullYear()?now.getMonth():Math.max(0,data.map((d,i)=>(d.inc||d.exp)?i:-1).reduce((a,b)=>Math.max(a,b),0));$('#forecast-chart .savings-scroll').scrollLeft=Math.max(0,(focus-2)*700/12)}
+ $('#forecast-series-legend').classList.toggle('hidden',forecastMode==='savings');
+ $('#forecast-chart').classList.add('scroll-chart');$('#forecast-chart').innerHTML=forecastMode==='savings'?savingsChart(data):evolutionChart(data);
+ {const now=new Date(),focus=forecastYear===now.getFullYear()?now.getMonth():Math.max(0,data.map((d,i)=>(d.inc||d.exp)?i:-1).reduce((a,b)=>Math.max(a,b),0));$('#forecast-chart .savings-scroll, #forecast-chart .all-scroll').scrollLeft=Math.max(0,(focus-2)*700/12)}
 }
 function heatColor(net,max){
  if(!net||!max)return '#eef2f0';const intensity=Math.min(4,Math.max(1,Math.ceil(Math.sqrt(Math.abs(net)/max)*4)));

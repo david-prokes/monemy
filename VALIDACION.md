@@ -1,4 +1,4 @@
-# Validación de monemy 2.1
+# Validación de monemy 2.1.1
 
 24 de octubre de 2026.
 
@@ -17,7 +17,7 @@ Prueba sobre un mismo origen `/monemy/` y un perfil persistente por caso:
 - Chromium con perfil móvil Pixel 7.
 - WebKit con perfil móvil iPhone 13.
 
-En ambos motores se registran datos con la versión anterior, incluyendo una categoría de color personalizado fuera de la nueva paleta, movimientos en céntimos, presupuestos, reglas y el registro de ocurrencias. Se interrumpe una instalación nueva dejando un recurso sin descargar, se comprueba que sigue disponible la versión anterior y se completa después una actualización real del service worker mediante Actualizar.
+En ambos motores se registran datos con la versión anterior, incluyendo una categoría de color personalizado fuera de la nueva paleta, movimientos en céntimos, presupuestos, reglas y el registro de ocurrencias. Se simula además un CDN que sigue sirviendo archivos antiguos para las URL normales; la caché nueva los evita usando URL de versión. Se interrumpe una instalación nueva dejando un recurso sin descargar, se comprueba que sigue disponible la versión anterior y se completa después una actualización real del service worker mediante Actualizar.
 
 Se comparan exactamente las cinco colecciones financieras antes y después de actualizar. Se comprueba la copia local previa, el estado leído de las alertas tras recargar, los ocho colores, conservación del formulario al cambiar de icono, las doce cantidades de ahorro, las celdas del calendario y sus detalles. Se vuelve a comparar el estado tras cerrar y abrir el mismo perfil.
 
