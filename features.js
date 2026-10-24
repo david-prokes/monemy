@@ -34,7 +34,6 @@ function evolutionChart(data){
  return `<div class="all-axis" aria-hidden="true"><svg viewBox="0 0 47 313" preserveAspectRatio="none">${axis}</svg></div><div class="all-scroll">${markup}</div>`;
 }
 function renderProjectionChart(data){
- $('#forecast-chart-title').textContent=forecastMode==='savings'?'Ahorro mensual':'Evolución mensual';
  $$('[data-forecast-mode]').forEach(b=>b.classList.toggle('selected',b.dataset.forecastMode===forecastMode));
  $('#forecast-series-legend').classList.toggle('hidden',forecastMode==='savings');
  $('#forecast-chart').classList.add('scroll-chart');$('#forecast-chart').innerHTML=forecastMode==='savings'?savingsChart(data):evolutionChart(data);

@@ -1,4 +1,4 @@
-# Validación de monemy 2.1.1
+# Validación de monemy 2.1.2
 
 24 de octubre de 2026.
 

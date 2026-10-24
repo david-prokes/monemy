@@ -50,7 +50,7 @@ También puede indicarse `CHROMIUM_PATH` para usar un Chromium ya instalado. Las
 
 Al publicar una nueva versión, cambiar el sufijo de `CACHE` en `sw.js`. La app ofrece «Actualizar» cuando la versión está lista. El service worker solo limpia sus propias cachés y nunca elimina IndexedDB.
 
-## Novedades 2.1.1
+## Novedades 2.1.2
 
 - Buzón dentro de Resumen, al lado del reloj y los ajustes, con contador de avisos sin leer y tarjetas amarillas o rojas. Los avisos se conservan localmente y pueden marcarse como leídos.
 - Presupuesto de gasto global o por categoría: aviso al alcanzar el límite, aviso rojo al superarlo y aviso de gasto rápido al cruzar el 25%, 50% o 75% en menos de la mitad del tiempo proporcional del mes. Para el primer umbral se incluyen los tres primeros días. Se muestra un único aviso de ritmo por presupuesto; solo vuelve a marcarse sin leer si aumenta el umbral o la criticidad.
@@ -63,7 +63,7 @@ Al publicar una nueva versión, cambiar el sufijo de `CACHE` en `sw.js`. La app 
 
 Se conservan el origen, `manifest.id`, `start_url`, la base IndexedDB `mi-dinero-local` y la clave `state/main`. El nombre visible cambia a monemy; la identidad interna se mantiene por compatibilidad.
 
-La versión 2.1.1 añade metadatos al formato 2 de los datos, sin convertir otra vez los céntimos ni borrar colecciones. Antes de migrar guarda una copia del estado anterior en `state/backup:before-2.1.1`, en una transacción local. El service worker solicita los archivos con una URL específica de la versión para evitar respuestas antiguas del CDN, valida los marcadores de versión del HTML y del JavaScript y prepara primero todos los archivos y solo aplica la versión completa al aceptar Actualizar. Una descarga incompleta deja funcionando la versión anterior. Su limpieza afecta exclusivamente a las cachés de archivos de su propio ámbito.
+La versión 2.1.2 añade metadatos al formato 2 de los datos, sin convertir otra vez los céntimos ni borrar colecciones. Antes de migrar guarda una copia del estado anterior en `state/backup:before-2.1.2`, en una transacción local. El service worker solicita los archivos con una URL específica de la versión para evitar respuestas antiguas del CDN, valida los marcadores de versión del HTML y del JavaScript y prepara primero todos los archivos y solo aplica la versión completa al aceptar Actualizar. Una descarga incompleta deja funcionando la versión anterior. Su limpieza afecta exclusivamente a las cachés de archivos de su propio ámbito.
 
 La app solicita almacenamiento persistente cuando el navegador lo permite; este puede concederlo o denegarlo. Las actualizaciones de código conservan los datos en el mismo navegador/perfil y origen. Borrar los datos del sitio, desinstalar o cambiar de origen/perfil puede eliminarlos o separarlos; las copias internas no sustituyen una exportación externa para esos casos.
 

@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.1.1';
+const APP_VERSION='2.1.2';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
