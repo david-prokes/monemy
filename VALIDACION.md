@@ -40,3 +40,16 @@ La nueva prueba `tests/preservation.cjs` pasa en Chromium con perfil Pixel 7 y W
 Se reprodujo un fallo anterior: editar solo el importe de una regla mensual del día 31 cuya próxima fecha cae el 28 de febrero cambiaba indebidamente el día a 28. Ocurría también en una regla anual del 29 de febrero. La corrección conserva el calendario si no se cambia la próxima fecha ni la frecuencia; el histórico no se modifica. La prueba falla con el código anterior y pasa después de la corrección en ambos motores. También se comprueba que cambiar expresamente la fecha actualiza la programación.
 
 Tras la corrección vuelven a pasar las 12 pruebas de cálculo, la regresión completa del navegador y la actualización desde la versión anterior en ambos motores. Siguen vigentes las limitaciones de dispositivos físicos indicadas arriba.
+
+
+## Alertas 2.2.0 — 25 de octubre de 2026
+
+Pasan 23 pruebas de lógica: las doce anteriores y once nuevas sobre presupuestos al 80 %, umbrales y prioridades, día excepcional, próximos pagos, suficiencia de histórico para la previsión negativa, bienvenida y primeros registros, ausencia de bromas retrospectivas, lectura y migración de alertas anteriores, rotación de frases, límite diario, contexto de compras e ingresos, objetivos de ingreso, cierres mensuales y regreso a la app.
+
+La prueba nueva `tests/alerts-browser.cjs` pasa en Chromium con perfil Pixel 7 y WebKit con perfil iPhone 13. Verifica tarjetas y contador lilas, amarillos y rojos mediante estilos calculados; bienvenida, primer gasto e ingreso y compra de Comida superior a 40 €; prioridades y ausencia de un vacile adicional al generarse un aviso financiero; conservación de lecturas y de las cinco colecciones financieras y el historial tras recargar sin conexión. Se inspeccionaron las capturas del buzón.
+
+Se probó la actualización real del service worker desde la versión 2.1.3, con el mismo origen y perfil persistente en ambos motores. Los datos incluyen categoría con color antiguo, movimientos, presupuesto, regla periódica, ocurrencias y una alerta anterior leída. Se comparan exactamente las cinco colecciones y las alertas anteriores, así como la copia local previa. También se verifican una descarga fallida y un CDN que entrega recursos antiguos, la recuperación posterior, el modo sin conexión y cerrar y abrir el perfil. No aparece ningún mensaje lila retrospectivo al actualizar esos datos.
+
+Vuelven a pasar la regresión de interfaz y `tests/preservation.cjs` en ambos motores. Se comparó el código para confirmar que dinero, fechas, periódicos, previsión y actividad no cambian. El HTML es idéntico salvo las referencias de versión; manifiesto e iconos permanecen idénticos. Los únicos estilos añadidos corresponden a mensajes lilas del buzón.
+
+Las pruebas usan motores de navegador con perfiles móviles, no teléfonos físicos. Se mantiene la limitación de WebKit Linux ya documentada: la indisponibilidad de red se comprueba rechazando conexiones del servidor.

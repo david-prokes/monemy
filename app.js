@@ -1,5 +1,5 @@
 'use strict';
-const APP_VERSION='2.1.3';
+const APP_VERSION='2.2.0';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const icon=name=>`<svg aria-hidden="true"><use href="#i-${name}"></use></svg>`;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -49,9 +49,9 @@ const readStore=()=>new Promise((resolve,reject)=>{
  }catch(e){reject(Error('Este navegador no permite guardar los datos.'))}
 });
 const loadFallback=()=>{try{return JSON.parse(localStorage.getItem('mi-dinero-data'))}catch(e){return null}};
-const save=()=>new Promise((resolve,reject)=>{
+const save=(alertOptions={})=>new Promise((resolve,reject)=>{
  if(!db){reject(Error('El almacenamiento no está disponible.'));return}
- MD.collectAlerts(state,dateNow());state.appVersion=APP_VERSION;const snapshot=copy(state),expected=durable.revision||0;let conflict=null;
+ MD.collectAlerts(state,dateNow(),{...alertOptions,previous:durable});state.appVersion=APP_VERSION;const snapshot=copy(state),expected=durable.revision||0;let conflict=null;
  const t=db.transaction('state','readwrite'),store=t.objectStore('state'),get=store.get('main');
  get.onsuccess=()=>{if((get.result?.revision||0)!==expected){conflict=get.result;t.abort();return}snapshot.revision=expected+1;store.put(snapshot,'main')};
  t.oncomplete=()=>{state.revision=snapshot.revision;durable=copy(snapshot);renderAlerts();resolve()};
@@ -74,7 +74,7 @@ function matchesRule(r,d){const dt=dateObj(d);return r.freq==='week'?dt.getDay()
 const firstMatchingFrom=MD.first,nextMatchingAfter=MD.next;
 function reconcileRules(){return MD.reconcile(state,dateNow())}
 async function register(){if(registerBusy||!appReady)return;registerBusy=true;const button=$('[data-action=register]');button.disabled=true;try{await registerMovement()}catch(e){showToast(e.message)}finally{registerBusy=false;button.disabled=!appReady}}
-async function registerMovement(){const amt=number($('#entry-amount').value),date=$('#entry-date').value||dateNow();if(!(amt>0)||!MD.validDate(date)){showToast('Introduce un importe y una fecha válidos');$('#entry-amount').focus();return}const note=$('#entry-note').value.trim();const tx={id:uid(),kind:entryKind,catId:entryCat,amount:amt,note,date};let scheduled=false;if(entryFlags.recur){const r={id:uid(),kind:entryKind,catId:entryCat,amount:amt,note,paused:false,startDate:date,...makeScheduleFromForm()};r.nextDate=firstMatchingFrom(date,r);if(date<=dateNow()){state.transactions.push({...tx,ruleId:r.id});state.occurrences.push(`rec:${r.id}:${date}`);r.nextDate=nextMatchingAfter(date,r)}else scheduled=true;state.rules.push(r)}else state.transactions.push(tx);reconcileRules();await save();$('#entry-amount').value='';$('#entry-note').value='';$('#entry-date').value=dateNow();entryCat=null;entryFlags={note:false,recur:false,date:false};updateEntryExtras();renderAll();showToast(scheduled?'Pago programado':'Movimiento registrado')}
+async function registerMovement(){const amt=number($('#entry-amount').value),date=$('#entry-date').value||dateNow();if(!(amt>0)||!MD.validDate(date)){showToast('Introduce un importe y una fecha válidos');$('#entry-amount').focus();return}const note=$('#entry-note').value.trim();const tx={id:uid(),kind:entryKind,catId:entryCat,amount:amt,note,date};let scheduled=false;if(entryFlags.recur){const r={id:uid(),kind:entryKind,catId:entryCat,amount:amt,note,paused:false,startDate:date,...makeScheduleFromForm()};r.nextDate=firstMatchingFrom(date,r);if(date<=dateNow()){state.transactions.push({...tx,ruleId:r.id});state.occurrences.push(`rec:${r.id}:${date}`);r.nextDate=nextMatchingAfter(date,r)}else scheduled=true;state.rules.push(r)}else state.transactions.push(tx);reconcileRules();await save({transaction:tx.id});$('#entry-amount').value='';$('#entry-note').value='';$('#entry-date').value=dateNow();entryCat=null;entryFlags={note:false,recur:false,date:false};updateEntryExtras();renderAll();showToast(scheduled?'Pago programado':'Movimiento registrado')}
 function rangeFor(kind,offset){if(kind==='prevweek'){kind='week';offset--}const now=new Date();const d=new Date(now.getFullYear(),now.getMonth(),now.getDate(),12);let start,end,label,caption;if(kind==='day'){d.setDate(d.getDate()+offset);start=fmtDate(d);end=start;label=new Intl.DateTimeFormat('es-ES',{weekday:'short',day:'numeric',month:'short'}).format(d);caption='Neto del día'}else if(kind==='week'){const monday=new Date(d);monday.setDate(d.getDate()-((d.getDay()+6)%7)+offset*7);const sunday=new Date(monday);sunday.setDate(monday.getDate()+6);start=fmtDate(monday);end=fmtDate(sunday);label=`${dateText(start)} – ${dateText(end)}`;caption='Neto de la semana'}else if(kind==='month'){d.setDate(1);d.setMonth(d.getMonth()+offset);start=fmtDate(d);end=fmtDate(new Date(d.getFullYear(),d.getMonth()+1,0,12));label=new Intl.DateTimeFormat('es-ES',{month:'long',year:'numeric'}).format(d);caption='Neto del mes'}else{d.setMonth(0,1);d.setFullYear(d.getFullYear()+offset);start=fmtDate(d);end=`${d.getFullYear()}-12-31`;label=String(d.getFullYear());caption='Neto del año'}return{start,end,label,caption}}
 const total=(xs,kind)=>xs.filter(x=>x.kind===kind).reduce((a,x)=>a+Number(x.amount),0);
 function renderSummary(){const r=rangeFor(periodKind,periodOffset);$('#summary-period-label').textContent=r.label;$('#balance-caption').textContent=r.caption;$$('[data-period]').forEach(b=>b.classList.toggle('selected',b.dataset.period===periodKind));const arr=state.transactions.filter(x=>x.date>=r.start&&x.date<=r.end),income=total(arr,'income'),expense=total(arr,'expense'),net=income-expense;$('#balance-value').textContent=(net>0?'+':'')+euro(net);$('#balance-value').classList.toggle('negative',net<0);$('#balance-income').textContent=euro(income);$('#balance-expense').textContent=euro(expense);$('#compare-income').style.width=(Math.max(income,expense)?income/Math.max(income,expense)*100:0)+'%';$('#compare-expense').style.width=(Math.max(income,expense)?expense/Math.max(income,expense)*100:0)+'%';const categoryTotal=entryKind==='income'?income:expense;$('#category-breakdown').setAttribute('aria-label',entryKind==='income'?'Ingresos por categoría':'Gastos por categoría');const by=new Map();for(const x of arr.filter(x=>x.kind===entryKind))by.set(x.catId||'_none',(by.get(x.catId||'_none')||0)+x.amount);const sorted=[...by].sort((a,b)=>b[1]-a[1]);$('#category-stats').innerHTML=sorted.length?sorted.map(([id,value])=>{const c=category(id==='_none'?null:id,entryKind);return `<div class="cat-stat">${bubble(c)}<div class="cat-stat-info"><div class="cat-stat-top"><span class="cat-label">${esc(c.name)}</span><b>${euro(value)}</b></div><div class="track"><div class="fill" style="width:${categoryTotal?Math.min(100,value/categoryTotal*100):0}%;background:${esc(c.color)}"></div></div></div></div>`}).join(''):`<div class="empty">Tus ${entryKind==='income'?'ingresos':'gastos'} aparecerán aquí al registrarlos.</div>`}
@@ -152,7 +152,7 @@ document.addEventListener('click',safe(async e=>{
  case 'toggle-search':searchOpen=!searchOpen;$('#mov-search-wrap').classList.toggle('hidden',!searchOpen);if(searchOpen)$('#mov-query').focus();else{$('#mov-query').value='';renderMovements()}break;
  case 'cancel-tx-edit':movEditId=null;renderMovements();break;
  case 'save-tx-edit':{const t=state.transactions.find(x=>x.id===movEditId),amt=number($('#tx-edit-amount').value),d=$('#tx-edit-date').value;if(!t||!(amt>0)||!MD.validDate(d)){showToast('Revisa el movimiento');break}Object.assign(t,{amount:amt,date:d,note:$('#tx-edit-note').value.trim(),catId:$('#tx-edit-category').value==='_none'?null:$('#tx-edit-category').value});movEditId=null;await save();renderAll();showToast('Movimiento actualizado');break}
- case 'load-demo':{if(state.transactions.length&&!confirm('Esto sustituirá los datos actuales por datos de ejemplo. ¿Continuar?'))break;state=loadDemo();await save();renderAll();showToast('Ejemplo cargado');settingsOpen=false;$('#settings-panel').classList.add('hidden');break}
+ case 'load-demo':{if(state.transactions.length&&!confirm('Esto sustituirá los datos actuales por datos de ejemplo. ¿Continuar?'))break;state=loadDemo();await save({baseline:true});renderAll();showToast('Ejemplo cargado');settingsOpen=false;$('#settings-panel').classList.add('hidden');break}
  case 'clear-data':{if(!confirm('¿Borrar todos los movimientos, objetivos y categorías personalizadas?'))break;state=blank();await save();renderAll();showToast('Datos borrados');break}
  case 'export-data':downloadExport();showToast('Archivo preparado');break;
  case 'import-data':$('#import-file').click();break;
@@ -174,7 +174,7 @@ $('#import-file').addEventListener('change',safe(async e=>{
   const j=JSON.parse(await f.text());if(j.app!=='mi-dinero'||![1,2].includes(j.version))throw Error('Archivo no válido');
   const imported=MD.validate(MD.migrate(j.data));imported.categories.forEach(c=>c.bg=hslBg(c.color));
   if(!confirm('Los datos importados sustituirán los actuales. ¿Continuar?'))return;
-  imported.revision=durable.revision;state=imported;reconcileRules();await save();renderAll();showToast('Datos importados');
+  imported.revision=durable.revision;state=imported;reconcileRules();await save({baseline:true});renderAll();showToast('Datos importados');
  }catch(err){showToast(err.message||'Archivo no válido')}finally{e.target.value=''}
 }));
 // Gestos de deslizar a la izquierda: acciones dentro de la misma lista, sin abrir otras páginas.
@@ -196,7 +196,7 @@ async function refresh(){
   const saved=await new Promise((resolve,reject)=>{const r=db.transaction('state','readonly').objectStore('state').get('main');r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});
   let changed=lastDay!==dateNow();lastDay=dateNow();
   if(saved&&(saved.revision||0)!==durable.revision){state=MD.migrate(saved);durable=copy(state);changed=true}
-  const ruleChanges=reconcileRules(),alertChanges=MD.collectAlerts(state,dateNow());if(ruleChanges||alertChanges){await save();changed=true}if(changed)renderAll();
+  const ruleChanges=reconcileRules(),alertChanges=MD.collectAlerts(state,dateNow(),{visit:true,previous:durable});if(ruleChanges||alertChanges){await save();changed=true}if(changed)renderAll();
  }catch(e){showToast(e.message)}finally{refreshBusy=false}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh()});
@@ -216,7 +216,7 @@ if('serviceWorker'in navigator){
  $('[data-action=register]').disabled=true;
  try{
   const saved=await readStore();state=saved?MD.validate(MD.migrate(saved)):blank();state.categories.forEach(c=>c.bg=hslBg(c.color));durable=copy(state);
-  const changed=reconcileRules(),alertChanges=MD.collectAlerts(state,dateNow());if(!saved||saved.schema!==2||saved.appVersion!==APP_VERSION||changed||alertChanges)await save();appReady=true;
+  const changed=reconcileRules(),alertChanges=MD.collectAlerts(state,dateNow(),{visit:true,previous:durable});if(!saved||saved.schema!==2||saved.appVersion!==APP_VERSION||changed||alertChanges)await save();appReady=true;
   renderAll();$('[data-action=register]').disabled=false;if(navigator.storage?.persist)navigator.storage.persist().catch(()=>{});
  }catch(e){$('#storage-error').textContent=e.message;$('#storage-error').classList.remove('hidden')}
 })();

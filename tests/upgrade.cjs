@@ -13,6 +13,7 @@ const server=http.createServer((req,res)=>{
  if(blocked&&name==='features.js'){res.writeHead(503).end();return}
  fs.readFile(file,(err,data)=>{if(err){res.writeHead(404).end();return}res.writeHead(200,{'Content-Type':mime[path.extname(file)]||'text/plain','Cache-Control':'no-store'}).end(data)});
 });
+const baselineTitle=fs.readFileSync(path.join(baseline,'index.html'),'utf8').match(/<title>(.*?)<\/title>/)[1],currentVersion=require('../package.json').version;
 const finances=s=>Object.fromEntries(['categories','transactions','rules','goals','occurrences'].map(k=>[k,s[k]]));
 const shots=process.env.SCREENSHOT_DIR||fs.mkdtempSync(path.join(os.tmpdir(),'monemy-update-'));fs.mkdirSync(shots,{recursive:true});
 let active;
@@ -23,24 +24,24 @@ let active;
   release=baseline;blocked=false;staleAssets=false;const profile=fs.mkdtempSync(path.join(os.tmpdir(),'monemy-'+spec.name+'-'));
   const {defaultBrowserType,...device}=devices[spec.device];const options={...device,headless:true,timezoneId:'Europe/Madrid',...(spec.executable?{executablePath:spec.executable}:{}),...(spec.engine===chromium?{args:['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']}:{}),serviceWorkers:'allow'};
   active=await spec.engine.launchPersistentContext(profile,options);let page=await active.newPage();page.setDefaultTimeout(15000);const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto(url);await page.waitForFunction(()=>document.querySelectorAll('#category-strip button').length>1);assert.equal(await page.title(),'Mi dinero');
+  await page.goto(url);await page.waitForFunction(()=>document.querySelectorAll('#category-strip button').length>1);assert.equal(await page.title(),baselineTitle);
   await page.locator('#entry-amount').fill('610,25');await page.locator('[data-action=register]').click();await page.waitForFunction(()=>document.querySelector('#entry-amount').value==='');
   const before=await page.evaluate(async()=>{
    const legacy={id:'legacy-custom',kind:'expense',name:'Anterior',icon:'food',color:'#123456',bg:hslBg('#123456')};state.categories.push(legacy);state.transactions[0].catId=legacy.id;state.transactions[0].note='Pago anterior a la actualización';
    state.goals=[{id:'monthly-budget',kind:'expense',catId:null,limit:50000}];
-   const today=dateNow(),r={id:'monthly-rule',kind:'expense',catId:legacy.id,amount:1399,note:'Periódico anterior',freq:'month',weekday:dateObj(today).getDay(),monthDay:dateObj(today).getDate(),annualDay:dateObj(today).getDate(),annualMonth:dateObj(today).getMonth()+1,startDate:today,paused:false};r.nextDate=nextMatchingAfter(today,r);state.rules=[r];state.occurrences=['rec:retired:2026-09-24'];await save();renderAll();return JSON.parse(JSON.stringify(state));
+   const today=dateNow(),r={id:'monthly-rule',kind:'expense',catId:legacy.id,amount:1399,note:'Periódico anterior',freq:'month',weekday:dateObj(today).getDay(),monthDay:dateObj(today).getDate(),annualDay:dateObj(today).getDate(),annualMonth:dateObj(today).getMonth()+1,startDate:today,paused:false};r.nextDate=nextMatchingAfter(today,r);state.rules=[r];state.occurrences=['rec:retired:2026-09-24'];state.alertHistory=state.alertHistory||[];state.alertHistory.push({id:'legacy-read',severity:'warning',date:plusDay(today,-1),title:'Aviso anterior leído',detail:'Conservar este aviso.',milestone:0,read:true});await save();renderAll();return JSON.parse(JSON.stringify(state));
   });
   await page.evaluate(()=>navigator.serviceWorker.ready);await page.reload();await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   assert.deepEqual(finances(await page.evaluate(()=>JSON.parse(JSON.stringify(state)))),finances(before));
   // Old installed worker remains usable if the incoming release cannot finish caching.
   release=current;blocked=true;staleAssets=true;
   await page.evaluate(async()=>{const registration=await navigator.serviceWorker.ready;await registration.update();const installing=registration.installing;if(installing)await new Promise((resolve,reject)=>{const deadline=setTimeout(()=>reject(Error('Update did not fail: '+installing.state)),8000);const inspect=()=>{if(installing.state==='redundant'){clearTimeout(deadline);resolve()}};inspect();installing.addEventListener('statechange',inspect)})});
-  await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#category-strip button').length>1);assert.equal(await page.title(),'Mi dinero');assert.deepEqual(finances(await page.evaluate(()=>JSON.parse(JSON.stringify(state)))),finances(before));
+  await page.reload();await page.waitForFunction(()=>document.querySelectorAll('#category-strip button').length>1);assert.equal(await page.title(),baselineTitle);assert.deepEqual(finances(await page.evaluate(()=>JSON.parse(JSON.stringify(state)))),finances(before));
   blocked=false;await page.evaluate(async()=>{await(await navigator.serviceWorker.ready).update()});
   await page.waitForFunction(()=>document.querySelector('#toast-action').textContent==='Actualizar'&&!document.querySelector('#toast-action').classList.contains('hidden'));
-  await page.locator('#toast-action').click();await page.waitForFunction(()=>document.title==='monemy'&&typeof appReady!=='undefined'&&appReady);
+  await page.locator('#toast-action').click();await page.waitForFunction(version=>document.querySelector('meta[name=monemy-version]')?.content===version&&typeof appReady!=='undefined'&&appReady,currentVersion);
   assert.deepEqual(finances(await page.evaluate(()=>JSON.parse(JSON.stringify(state)))),finances(before));
-  const backup=await page.evaluate(()=>new Promise((resolve,reject)=>{const r=db.transaction('state','readonly').objectStore('state').get('backup:before-'+APP_VERSION);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}));assert.deepEqual(backup.data,before);
+  const backup=await page.evaluate(()=>new Promise((resolve,reject)=>{const r=db.transaction('state','readonly').objectStore('state').get('backup:before-'+APP_VERSION);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)}));assert.deepEqual(backup.data,before);for(const alert of before.alertHistory||[])assert.deepEqual(await page.evaluate(id=>state.alertHistory.find(a=>a.id===id),alert.id),alert);assert.equal(await page.evaluate(()=>state.alertHistory.filter(a=>a.severity==='playful').length),0);
   assert.equal(await page.locator('#alert-badge').innerText(),'1');await page.locator('#inbox-toggle').click();assert.equal(await page.locator('.alert-card.critical').count(),1);await page.locator('#read-all-alerts').click();await page.locator('#alert-badge').waitFor({state:'hidden'});
   await page.reload();await page.waitForFunction(()=>typeof appReady!=='undefined'&&appReady);assert.equal(await page.locator('#alert-badge').isVisible(),false);
   await page.locator('[data-action=toggle-categories]').click();await page.locator('[data-action=toggle-category-maker]').click();assert.equal(await page.locator('[data-pick-color]').count(),8);assert.equal(await page.locator('input[type=color]').count(),0);

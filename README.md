@@ -83,3 +83,20 @@ Consultar `VALIDACION.md` para las comprobaciones realizadas y sus límites.
 El registro evita etiquetas redundantes: iconos y Ver más bajo las categorías, importe directo y Registrar a todo el ancho. El período se muestra dentro de la tarjeta del neto. El desglose sigue el selector Gasto/Ingreso sin repetir un título. En Proyección el año comparte cabecera con el título y Tu semana habitual no añade subtítulos.
 
 La auditoría de conservación se ejecuta con `npm run test:preservation` en Chromium y WebKit. Comprueba también que editar solo el importe de un pago mensual del día 31 o anual del 29 de febrero conserva su día previsto; cambiar la fecha o frecuencia sí actualiza la programación.
+
+
+## Alertas 2.2.0
+
+Cambio limitado al buzón y sus reglas. Se mantienen las tres pantallas, el registro, las gráficas, los cálculos monetarios, la programación de periódicos y la identidad de instalación.
+
+- Amarillo: presupuesto al 80 % o exactamente agotado; ritmo del 25 % y 50 % demasiado pronto; gasto superior a la media de tres meses; día excepcional; pago previsto para mañana.
+- Rojo: presupuesto superado; ritmo del 75 % demasiado pronto; gasto desde el 125 % de la media; previsión del mes con gastos superiores a ingresos, con ingresos y gastos registrados en los tres meses naturales anteriores.
+- Lila: bienvenida sin registros, primer gasto e ingreso, Comida superior a 40 €, cinco gastos en el día, cuatro pequeños gastos de hasta 10 € que sumen al menos 15 €, Ventas, Extras, regreso después de cuatro días y celebraciones por objetivos de ingreso, ahorro mensual y presupuesto cumplido.
+
+El aviso diario requiere al menos catorce días anteriores de historial, gasto de al menos 30 € y más del doble de la media diaria anterior; esa media incluye días sin movimientos y usa como máximo treinta días. Los gastos rápidos conservan los umbrales previos. Los mensajes del buzón emplean el tono vacilón acordado, con un dato breve debajo y variantes persistentes. Las celebraciones son lilas; no se añade un cuarto color.
+
+Un vacile ordinario nuevo por día, con excepción del primer registro de cada tipo y celebraciones. Un aviso financiero nuevo o que aumenta de nivel tiene prioridad sobre el vacile del mismo movimiento. El contador prioriza rojo, después amarillo y finalmente lila. Las lecturas se guardan y no se reinician al cambiar los textos.
+
+Al actualizar, los registros existentes inicializan los marcadores de interacción: no se generan bromas retrospectivas. Las compras antiguas, ediciones, deshacer e importaciones no se tratan como nuevas compras para esos mensajes. Las celebraciones de cierre empiezan después de activar esta versión y se refieren al último mes terminado observado por la app. Los pagos próximos y el resto de avisos se calculan al utilizar la app, dentro del buzón.
+
+Se mantiene el formato financiero 2 y la misma base IndexedDB. Solo se añaden metadatos de alertas, además de aceptar el color lila en el historial. Antes de actualizar se conserva la copia local de seguridad de la versión anterior. Para validar el buzón: `npm run test:alerts` (Chromium y WebKit).

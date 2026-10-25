@@ -16,3 +16,6 @@
 .weekday-heatmap{margin-top:14px}
 .all-scroll{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#c8ddd3 transparent}.chart-panel .all-scroll svg{display:block;width:700px;min-width:700px;height:322px}.all-axis{position:absolute;left:0;top:0;z-index:2;background:white;width:48px;height:322px;pointer-events:none}.chart-panel .all-axis svg{display:block;width:48px;height:322px;overflow:hidden}
 .year-select{border:1px solid #e4eae8;border-radius:11px;background:#fff;padding:8px 11px;color:var(--ink);font-size:13px;max-width:110px}
+
+/* Lilac messages share the existing inbox; warning and critical colours retain priority. */
+.alert-badge.playful{background:#906dce}.alert-card.playful{border-color:#e1d7f2;border-left-color:#906dce;background:#f8f4fd}.playful .alert-symbol{color:#805bb9}.playful .unread-dot{background:#906dce}.alert-card.playful.read{background:#faf8fc}

@@ -58,7 +58,7 @@ test('budget alerts cover early pace, exact limit and overspend without duplicat
 test('alerts distinguish category budgets, income goals and three full previous months',()=>{
  const s=empty();s.categories=[{id:'food',name:'Comida'}];s.goals=[{id:'foodgoal',kind:'expense',catId:'food',limit:10000},{id:'salarygoal',kind:'income',catId:null,limit:1}];
  s.transactions=[tx('2026-07-02','expense',20000),tx('2026-08-02','expense',20000),tx('2026-09-02','expense',20000),tx('2026-10-03','expense',21000,{catId:'food'}),tx('2026-10-03','income',100000)];
- const alerts=MD.alertCandidates(s,'2026-10-10');assert.ok(alerts.some(a=>a.title.includes('Comida')));assert.ok(!alerts.some(a=>a.id.includes('salarygoal')));assert.equal(alerts.find(a=>a.id.endsWith(':average')).severity,'warning');
+ const alerts=MD.alertCandidates(s,'2026-10-10');assert.ok(alerts.some(a=>a.detail.includes('Comida')));assert.ok(!alerts.some(a=>a.id.includes('salarygoal')));assert.equal(alerts.find(a=>a.id.endsWith(':average')).severity,'warning');
  s.transactions.push(tx('2026-10-04','expense',4000));assert.equal(MD.alertCandidates(s,'2026-10-10').find(a=>a.id.endsWith(':average')).severity,'critical');
  s.transactions=s.transactions.filter(t=>!t.date.startsWith('2026-08'));assert.ok(!MD.alertCandidates(s,'2026-10-10').some(a=>a.id.endsWith(':average')));
 });
